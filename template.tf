@@ -114,14 +114,26 @@ resource "aws_security_group" "allow_web" {
 
 #  }
 
+#  Assign an elastic IP to the network interface created in step 7
+
+# resource "aws_eip" "one" {
+#   vpc                       = true
+#   network_interface         = aws_network_interface.web-server-nic.id
+#   associate_with_private_ip = "10.0.1.50"
+#   depends_on                = [aws_internet_gateway.gateway]
+# }
+
+
+
+
  resource "aws_instance" "foo" {
-  ami           = "ami-0c1a7f89451184c8b" # us-west-2
+  ami           = "ami-0c1a7f89451184c8b" 
   instance_type = "t2.micro"
   availability_zone = "ap-south-1a"
   key_name          = "demo-pair"
-  associate_public_ip_address = "true"
-  subnet_id = aws_subnet.subnet-1.id
-   security_groups = ["${aws_security_group.allow_web.id}"]
+  associate_public_ip_address = "true"   # Needs to be removed if you use eip
+  subnet_id = aws_subnet.subnet-1.id     # Needs to be remoed if you use eip
+  security_groups = ["${aws_security_group.allow_web.id}"]    # Needs to be remoed if you use eip
 
 
   # network_interface {
@@ -139,9 +151,7 @@ user_data = <<-EOF
    tags = {
      Name = "web-server"
    }
-  credit_specification {
-    cpu_credits = "unlimited"
-  }
+ 
 }
 output "server_public_ip" {
    value = aws_instance.foo.public_ip
