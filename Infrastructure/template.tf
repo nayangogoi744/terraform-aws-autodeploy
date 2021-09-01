@@ -8,14 +8,14 @@ terraform {
 
 # Configure the AWS Provider
 provider "aws" {
-  region = "ap-south-1"
-  access_key = "<your access key>"
-  secret_key = "<your secret key>"
+  region = var.region
+  access_key = var.access_key
+  secret_key = var.secret_key
 }
 
 #Creating th VPC
 resource "aws_vpc" "vpc" {
-  cidr_block       = "10.0.0.0/16"
+  cidr_block       = var.vpc_cidr
   instance_tenancy = "default"
 
   tags = {
@@ -52,7 +52,7 @@ resource "aws_route_table" "rt" {
 #Creating subnet
 resource "aws_subnet" "subnet-1" {
     vpc_id = aws_vpc.vpc.id
-    cidr_block = "10.0.1.0/24"
+    cidr_block = var.subnet_cidr
     availability_zone = "ap-south-1a"
     tags = {
      Name = "prod-subnet"
@@ -107,52 +107,47 @@ resource "aws_security_group" "allow_web" {
 
  #Create a network interface with an ip in the subnet
 
-#  resource "aws_network_interface" "web-server-nic" {
-#    subnet_id       = aws_subnet.subnet-1.id
-#    private_ips     = ["10.0.1.50"]
-#    security_groups = [aws_security_group.allow_web.id]
+#   resource "aws_network_interface" "web-server-nic" {
+#     subnet_id       = aws_subnet.subnet-1.id
+#     private_ips     = ["10.0.1.50"]
+#     security_groups = [aws_security_group.allow_web.id]
 
 #  }
 
-#  Assign an elastic IP to the network interface created in step 7
+# # Assign an elastic IP to the network interface
 
-# resource "aws_eip" "one" {
-#   vpc                       = true
-#   network_interface         = aws_network_interface.web-server-nic.id
-#   associate_with_private_ip = "10.0.1.50"
-#   depends_on                = [aws_internet_gateway.gateway]
-# }
-
-
+#  resource "aws_eip" "one" {
+#    vpc                       = true
+#    network_interface         = aws_network_interface.web-server-nic.id
+#    associate_with_private_ip = "10.0.1.50"
+#    depends_on                = [aws_internet_gateway.gateway]
+#  }
 
 
- resource "aws_instance" "foo" {
-  ami           = "ami-0c1a7f89451184c8b" 
-  instance_type = "t2.micro"
+ resource "aws_instance" "demo" {
+  ami           = var.ami
+  instance_type = var.instance_type
   availability_zone = "ap-south-1a"
   key_name          = "demo-pair"
-  associate_public_ip_address = "true"   # Needs to be removed if you use eip
-  subnet_id = aws_subnet.subnet-1.id     # Needs to be remoed if you use eip
-  security_groups = ["${aws_security_group.allow_web.id}"]    # Needs to be remoed if you use eip
+  associate_public_ip_address = "true"
+  subnet_id = aws_subnet.subnet-1.id
+  security_groups = ["${aws_security_group.allow_web.id}"]
 
 
-  # network_interface {
-  #   network_interface_id = aws_network_interface.web-server-nic.id
-  #   device_index         = 0
-  # }
+  #  network_interface {
+  #    network_interface_id = aws_network_interface.web-server-nic.id
+  #    device_index         = 0
+  #  }
 
-user_data = <<-EOF
-                 #!/bin/bash
-                 sudo apt update -y
-                 sudo apt install apache2 -y
-                 sudo systemctl start apache2
-                 sudo bash -c 'echo your very first web server > /var/www/html/index.html'
-                 EOF
+# user_data = <<-EOF
+#                  #!/bin/bash
+#                  sudo apt update -y
+#                  sudo apt install apache2 -y
+#                  sudo systemctl start apache2
+#                  sudo bash -c 'echo Nayan your very first web server > /var/www/html/index.html'
+#                  EOF
    tags = {
-     Name = "web-server"
+     Name = var.instance_name
    }
- 
+
 }
-output "server_public_ip" {
-   value = aws_instance.foo.public_ip
- }
